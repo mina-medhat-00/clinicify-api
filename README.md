@@ -1,14 +1,18 @@
 # Clinicify API
 
+## Get started
+
 1. Download the project from github
 2. Run the following commands in terminal to install packages
-   2.1. composer install
-   2.2. cp .env.example .env
-   2.3. php artisan key:generate
-   2.4. php artisan jwt:secret
-   2.5. php artisan migrate
-   2.6. php artisan storage:link
-3. For Running the server
+```
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan jwt:secret
+php artisan migrate
+php artisan storage:link
+```
+4. For Running the server
    3.1 php artisan serve
    3.2 php artisan schedule:work
 
