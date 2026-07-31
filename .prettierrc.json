@@ -1,0 +1,13 @@
+{
+  "plugins": ["@prettier/plugin-php"],
+  "overrides": [
+    {
+      "files": "*.php",
+      "options": {
+        "phpVersion": "8.1",
+        "tabWidth": 4,
+        "braceStyle": "psr-2"
+      }
+    }
+  ]
+}
