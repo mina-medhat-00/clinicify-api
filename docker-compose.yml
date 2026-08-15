@@ -1,0 +1,86 @@
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: clinicify
+      MYSQL_USER: clinicify
+      MYSQL_PASSWORD: clinicify
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - clinicify_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build: .
+    restart: unless-stopped
+    expose:
+      - "8000"
+    volumes:
+      - .:/var/www/html
+    environment:
+      APP_URL: http://localhost:5000
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: clinicify
+      DB_USERNAME: clinicify
+      DB_PASSWORD: clinicify
+      SESSION_DRIVER: file
+      CORS_ALLOWED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      OPENVIDU_URL: http://openvidu:4443
+      OPENVIDU_SECRET: MY_SECRET
+      OPENVIDU_PUBLIC_URL: http://localhost:4443
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "php",
+          "-r",
+          "exit(@file_get_contents('http://127.0.0.1:8000/general/statistics')===false?1:0);",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    command: >
+      sh -c "composer install --no-interaction --prefer-dist
+      && php artisan storage:link || true
+      && php artisan config:clear
+      && php artisan migrate --force
+      && php artisan serve --host=0.0.0.0 --port=8000 &
+      exec php artisan schedule:work"
+
+  gateway:
+    build: ./realtime
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      API_UPSTREAM: http://api:8000
+      GATEWAY_PORT: 5000
+      CORS_ALLOWED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+    depends_on:
+      api:
+        condition: service_healthy
+
+  openvidu:
+    image: openvidu/openvidu-dev:2.32.0
+    restart: unless-stopped
+    ports:
+      - "4443:4443"
+    environment:
+      OPENVIDU_SECRET: MY_SECRET
+      DOMAIN_OR_PUBLIC_IP: localhost
+      OPENVIDU_PUBLICURL: http://localhost:4443
+
+volumes:
+  clinicify_mysql:
