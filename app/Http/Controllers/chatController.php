@@ -86,8 +86,8 @@ class chatController extends Controller
             "message_from" => $user1_id,
             "message_to" => $user2_id,
             "content" => $content,
-            "issued_date" => Carbon::now()->addHours(1),
-            "issued_time" => Carbon::now()->addHours(1),
+            "issued_date" => Carbon::now(),
+            "issued_time" => Carbon::now(),
         ]);
         $time = $msg->issued_time;
         $temp = explode(" ", $time);

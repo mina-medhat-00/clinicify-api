@@ -13,21 +13,27 @@ class deleteAppointments extends Command
      *
      * @var string
      */
-    protected $signature = 'delete_past_appointments';
+    protected $signature = "delete_past_appointments";
 
-    protected $description = 'delete the free past appointments';
+    protected $description = "delete the free past appointments";
 
     public function handle()
     {
-        $appointments=Appointment::where('appointment_state','=','free')->get();
-        foreach ($appointments as $appoint){
-            if ($appoint){
-                $currentTime = Carbon::now()->addHours(1)->addMilliseconds(120000);
-                $scheduledTime = Carbon::parse($appoint->schedule_date . ' ' . $appoint->slot_time);
-            if($currentTime->greaterThanOrEqualTo($scheduledTime)){
-                $appoint->delete();
+        $appointments = Appointment::where(
+            "appointment_state",
+            "=",
+            "free",
+        )->get();
+        foreach ($appointments as $appoint) {
+            if ($appoint) {
+                $currentTime = Carbon::now()->addMilliseconds(120000);
+                $scheduledTime = Carbon::parse(
+                    $appoint->schedule_date . " " . $appoint->slot_time,
+                );
+                if ($currentTime->greaterThanOrEqualTo($scheduledTime)) {
+                    $appoint->delete();
+                }
             }
-        }
         }
     }
 }

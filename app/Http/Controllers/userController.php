@@ -96,7 +96,7 @@ class userController extends Controller
                             "salary" => $doctor->salary,
                             "is_verified" => $verify ? $verify : null,
 
-                            "fees" => $doctor->salary,
+                            "fees" => $doctor->fees,
                             "certificate_count" => $doctor->certificate_count,
                             "rate" => isset($avg_of_rates) ? $avg_of_rates : 0,
                             "num_rate" => isset($number_of_rates)
@@ -233,7 +233,7 @@ class userController extends Controller
                             "specialty" => $doctor->specialty,
                             "experiences" => $doctor->experiences,
                             "salary" => $doctor->salary,
-                            "fees" => $doctor->salary,
+                            "fees" => $doctor->fees,
                             "certificate_count" => $doctor->certificate_count,
                             "rate" => isset($avg_of_rates) ? $avg_of_rates : 0,
                             "num_rate" => isset($number_of_rates)

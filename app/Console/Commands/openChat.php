@@ -14,14 +14,14 @@ class openChat extends Command
      *
      * @var string
      */
-    protected $signature = 'open_chat';
+    protected $signature = "open_chat";
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Open chat when the time comes';
+    protected $description = "Open chat when the time comes";
 
     /**
      * Execute the console command.
@@ -30,33 +30,48 @@ class openChat extends Command
      */
     public function handle()
     {
-
-        $appointments=Appointment::all();
-        foreach ($appointments as $appoint){
-            if(isset($appoint->booked_from)) {
+        $appointments = Appointment::all();
+        foreach ($appointments as $appoint) {
+            if (isset($appoint->booked_from)) {
                 $c1 = $appoint->booked_from;
-            }
-            else{
+            } else {
                 continue;
             }
-            $c2=$appoint->schedule_from;
-            $has_chat=Chat::where([['chat_from', $c1],['chat_to',$c2]])->first();
+            $c2 = $appoint->schedule_from;
+            $has_chat = Chat::where([
+                ["chat_from", $c1],
+                ["chat_to", $c2],
+            ])->first();
             if (empty($has_chat)) {
                 Chat::create([
-                    'chat_from'=>$c1,
-                    'chat_to'=>$c2,
+                    "chat_from" => $c1,
+                    "chat_to" => $c2,
                 ]);
                 Chat::create([
-                    'chat_from'=>$c2,
-                    'chat_to'=>$c1,
+                    "chat_from" => $c2,
+                    "chat_to" => $c1,
                 ]);
             }
-            $currentTime = Carbon::now()->addHours(1);
-            $scheduledTime = Carbon::parse($appoint->schedule_date . ' ' . $appoint->slot_time);
-            $endTime = Carbon::parse($appoint->schedule_date . ' ' . $appoint->slot_time)->addRealMilliseconds($appoint->duration);
-            if($currentTime->greaterThanOrEqualTo($scheduledTime) and  $currentTime->lessThanOrEqualTo($endTime)) {
-                $openChats = Chat::where([['chat_from', $appoint->schedule_from], ['chat_to', $appoint->booked_from]])
-                    ->orWhere([['chat_from', $appoint->booked_from], ['chat_to', $appoint->schedule_from]])->get();
+            $currentTime = Carbon::now();
+            $scheduledTime = Carbon::parse(
+                $appoint->schedule_date . " " . $appoint->slot_time,
+            );
+            $endTime = Carbon::parse(
+                $appoint->schedule_date . " " . $appoint->slot_time,
+            )->addRealMilliseconds($appoint->duration);
+            if (
+                $currentTime->greaterThanOrEqualTo($scheduledTime) and
+                $currentTime->lessThanOrEqualTo($endTime)
+            ) {
+                $openChats = Chat::where([
+                    ["chat_from", $appoint->schedule_from],
+                    ["chat_to", $appoint->booked_from],
+                ])
+                    ->orWhere([
+                        ["chat_from", $appoint->booked_from],
+                        ["chat_to", $appoint->schedule_from],
+                    ])
+                    ->get();
                 $appoint->appointment_state = "running";
                 $appoint->save();
                 foreach ($openChats as $openChat) {
@@ -65,20 +80,28 @@ class openChat extends Command
                         $openChat->save();
                     }
                 }
-            }
-            elseif ($currentTime->greaterThanOrEqualTo($scheduledTime) and  $currentTime->greaterThanOrEqualTo($endTime)){
-                $openChats = Chat::where([['chat_from', $appoint->schedule_from], ['chat_to', $appoint->booked_from]])
-                    ->orWhere([['chat_from', $appoint->booked_from], ['chat_to', $appoint->schedule_from]])->get();
-                $appoint->appointment_state="done";
+            } elseif (
+                $currentTime->greaterThanOrEqualTo($scheduledTime) and
+                $currentTime->greaterThanOrEqualTo($endTime)
+            ) {
+                $openChats = Chat::where([
+                    ["chat_from", $appoint->schedule_from],
+                    ["chat_to", $appoint->booked_from],
+                ])
+                    ->orWhere([
+                        ["chat_from", $appoint->booked_from],
+                        ["chat_to", $appoint->schedule_from],
+                    ])
+                    ->get();
+                $appoint->appointment_state = "done";
                 $appoint->save();
                 foreach ($openChats as $openChat) {
                     if ($openChat->admin_restrict != 1) {
-
                         $openChat->is_open = 0;
                         $openChat->save();
                     }
                 }
             }
-            }
+        }
     }
 }

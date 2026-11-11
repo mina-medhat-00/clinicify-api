@@ -10,21 +10,22 @@ class Doctor extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name',
-        'username',
-        'user_id',
-        'staff_type',
-        'specialty',
-        'current_hospital',
-        'age',
-        'type',
-        'rate',
-        'graduation_year',
-        'experience_years',
-        'experiences',
-        'about',
-        'salary',
-        'certificate_count'
+        "name",
+        "username",
+        "user_id",
+        "staff_type",
+        "specialty",
+        "current_hospital",
+        "age",
+        "type",
+        "rate",
+        "graduation_year",
+        "experience_years",
+        "experiences",
+        "about",
+        "salary",
+        "fees",
+        "certificate_count",
     ];
 
     public function user()
