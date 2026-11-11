@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\book_appointment;
 use App\Mail\cancel_appointment;
+use App\Models\History;
 use App\Models\Appointment;
 use App\Models\Clinic_detail;
 use App\Models\Doctor;
@@ -366,26 +367,31 @@ class appointmentController extends Controller
             ];
             return response(compact("state", "message", "data"), 401);
         }
-        $date = $_GET["date"];
+        // date is optional so callers can ask for every appointment with one doctor
+        $date = $_GET["date"] ?? null;
         $user_id = Auth::user()->id;
         $state = "good, ok";
         $message = "information retreived successfully";
 
         if (isset($_GET["doctor"])) {
-            $all_data = Appointment::where([
-                ["schedule_from", "=", $user_id],
-                ["schedule_date", "=", $date],
-            ])->get();
+            $where = [["schedule_from", "=", $user_id]];
+            if ($date) {
+                $where[] = ["schedule_date", "=", $date];
+            }
+            $all_data = Appointment::where($where)->get();
             $user_data = User::where("id", "=", $user_id)->first();
             $doc_data = Doctor::where("user_id", "=", $user_id)->first();
 
             $data = [];
             foreach ($all_data as $d) {
                 $patient = User::where("id", "=", $d->booked_from)->first();
+                $record = $d->booked_from
+                    ? History::where("user_id", "=", $d->booked_from)->first()
+                    : null;
                 $doctorData = [
                     "patientId" => $d->booked_from,
                     "doctorId" => $user_id,
-                    "schedule_date" => $date,
+                    "schedule_date" => $d->schedule_date,
                     "booked_time" => $d->updated_at,
                     "appointmentDuration" => $d->duration,
                     "appointment_duration" => $d->duration,
@@ -404,24 +410,27 @@ class appointmentController extends Controller
                     "rate" => $doc_data->rate,
                     "fees" => $d->appointmentFees,
                     "specialty" => $doc_data->specialty,
-                    "test_results" => "asclks",
-                    "current_issue" => "current_issue",
-                    "allergies" => null,
-                    "immunizations" => null,
-                    "surgeries" => null,
+                    "test_results" => $record->test_results ?? null,
+                    "current_issue" => $record->current_issue ?? null,
+                    "allergies" => $record->allergies ?? null,
+                    "immunizations" => $record->immunizations ?? null,
+                    "surgeries" => $record->surgeries ?? null,
                     "is_verified" => 1,
-
-                    "illnesses_history" => null,
+                    "illnesses_history" => $record->illnesses_history ?? null,
                 ];
                 array_push($data, $doctorData);
             }
             return response(compact("state", "message", "data"), 200);
         }
         // Patient Appointments
-        $all_data = Appointment::where([
-            ["booked_from", "=", $user_id],
-            ["schedule_date", "=", $date],
-        ])->get();
+        $where = [["booked_from", "=", $user_id]];
+        if ($date) {
+            $where[] = ["schedule_date", "=", $date];
+        }
+        if (isset($_GET["doctor_id"])) {
+            $where[] = ["schedule_from", "=", $_GET["doctor_id"]];
+        }
+        $all_data = Appointment::where($where)->get();
         $user_data = User::where("id", "=", $user_id)->first();
 
         $data = [];
@@ -437,7 +446,7 @@ class appointmentController extends Controller
             $data_push = [
                 "patientId" => $user_id,
                 "doctorId" => $doctor_id,
-                "schedule_date" => $date,
+                "schedule_date" => $d->schedule_date,
                 "booked_time" => $d->updated_at,
                 "slot_time" => $d->slot_time,
                 "appointment_state" => $d->appointment_state,
